@@ -175,14 +175,16 @@ data "aws_iam_policy_document" "github_actions_permissions" {
     }
   }
 
+  # Wildcard resource: EKS's internal "does this SLR already exist" check
+  # (run with the caller's own credentials before CreateServiceLinkedRole)
+  # doesn't reliably authorize against the scoped /aws-service-role/<svc>/*
+  # ARN pattern - a known AWS rough edge. GetRole is read-only, so a broad
+  # resource here is low-risk.
   statement {
-    sid     = "EksServiceLinkedRoleLookup"
-    effect  = "Allow"
-    actions = ["iam:GetRole"]
-    resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/eks.amazonaws.com/*",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/eks-nodegroup.amazonaws.com/*",
-    ]
+    sid       = "EksServiceLinkedRoleLookup"
+    effect    = "Allow"
+    actions   = ["iam:GetRole"]
+    resources = ["*"]
   }
 
   statement {
