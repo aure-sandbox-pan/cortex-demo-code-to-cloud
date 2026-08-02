@@ -157,18 +157,32 @@ data "aws_iam_policy_document" "github_actions_permissions" {
     ]
   }
 
-  # EKS creates its AWS-managed service-linked role automatically on first
-  # cluster creation in the account, if it doesn't already exist.
+  # EKS creates its AWS-managed service-linked roles automatically on first
+  # cluster/nodegroup creation in the account, if they don't already exist -
+  # GetRole is needed for the "does it already exist" check either way.
   statement {
-    sid       = "EksServiceLinkedRole"
-    effect    = "Allow"
-    actions   = ["iam:CreateServiceLinkedRole"]
-    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/eks.amazonaws.com/*"]
+    sid     = "EksServiceLinkedRole"
+    effect  = "Allow"
+    actions = ["iam:CreateServiceLinkedRole"]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/eks.amazonaws.com/*",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/eks-nodegroup.amazonaws.com/*",
+    ]
     condition {
       test     = "StringEquals"
       variable = "iam:AWSServiceName"
-      values   = ["eks.amazonaws.com"]
+      values   = ["eks.amazonaws.com", "eks-nodegroup.amazonaws.com"]
     }
+  }
+
+  statement {
+    sid     = "EksServiceLinkedRoleLookup"
+    effect  = "Allow"
+    actions = ["iam:GetRole"]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/eks.amazonaws.com/*",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/eks-nodegroup.amazonaws.com/*",
+    ]
   }
 
   statement {
