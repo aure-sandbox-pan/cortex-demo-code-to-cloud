@@ -157,6 +157,20 @@ data "aws_iam_policy_document" "github_actions_permissions" {
     ]
   }
 
+  # EKS creates its AWS-managed service-linked role automatically on first
+  # cluster creation in the account, if it doesn't already exist.
+  statement {
+    sid       = "EksServiceLinkedRole"
+    effect    = "Allow"
+    actions   = ["iam:CreateServiceLinkedRole"]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/eks.amazonaws.com/*"]
+    condition {
+      test     = "StringEquals"
+      variable = "iam:AWSServiceName"
+      values   = ["eks.amazonaws.com"]
+    }
+  }
+
   statement {
     sid     = "PassEksServiceRoles"
     effect  = "Allow"
