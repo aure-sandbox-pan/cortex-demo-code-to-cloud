@@ -83,6 +83,7 @@ data "aws_iam_policy_document" "github_actions_permissions" {
       "ecr:PutImage",
       "ecr:BatchGetImage",
       "ecr:TagResource",
+      "ecr:ListTagsForResource",
     ]
     resources = ["arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/${var.github_repo}"]
   }
@@ -146,6 +147,7 @@ data "aws_iam_policy_document" "github_actions_permissions" {
       "iam:AttachRolePolicy",
       "iam:DetachRolePolicy",
       "iam:ListAttachedRolePolicies",
+      "iam:ListRolePolicies",
     ]
     resources = [
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/cortex-demo-eks-cluster",
