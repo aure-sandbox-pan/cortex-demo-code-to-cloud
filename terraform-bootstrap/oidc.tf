@@ -26,11 +26,16 @@ data "aws_iam_policy_document" "github_actions_trust" {
       values   = ["sts.amazonaws.com"]
     }
 
-    # Scoped to pushes/dispatches on main only - not the whole repo, not other branches.
+    # Scoped to pushes/dispatches on main only - not the whole repo, not other
+    # branches. StringLike (not StringEquals) because GitHub appends
+    # "@<owner_id>"/"@<repo_id>" suffixes to this claim once an org or repo
+    # has been renamed/transferred at least once - the trailing "*" absorbs
+    # that optional suffix while still requiring the literal org/repo names
+    # as a prefix.
     condition {
-      test     = "StringEquals"
+      test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_org}/${var.github_repo}:ref:refs/heads/main"]
+      values   = ["repo:${var.github_org}*/${var.github_repo}*:ref:refs/heads/main"]
     }
   }
 }
