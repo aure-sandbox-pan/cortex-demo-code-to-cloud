@@ -1,0 +1,21 @@
+# --- LIVE DEMO (Phase 3, Admission Control) ---------------------------------
+# `kubectl apply -f k8s/bad-pod.yaml` against a cluster with the Cortex Cloud
+# admission controller installed should be REJECTED at admission time, before
+# the pod is ever scheduled. Each field below violates a distinct policy.
+# -----------------------------------------------------------------------------
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bad-pod
+  labels:
+    app: bad-pod
+spec:
+  hostNetwork: true # shares the node's network namespace
+  containers:
+    - name: bad-container
+      image: cortex-demo-code-to-cloud:latest # mutable tag, not pinned
+      securityContext:
+        privileged: true # full access to the host
+        runAsUser: 0 # runs as root
+        allowPrivilegeEscalation: true
+      # no resources block: no CPU/memory requests or limits

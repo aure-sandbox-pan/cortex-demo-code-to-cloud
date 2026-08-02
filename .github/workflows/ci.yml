@@ -1,0 +1,46 @@
+name: CI - Cortex Cloud Guardrails
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  cortex-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------
+      # TODO (before recording): replace this step with the exact snippet
+      # from your tenant - Cortex Cloud console > Settings > Integrations >
+      # Pipelines > GitHub Actions. It generates the action name/version
+      # and the required inputs for your tenant, and posts scan results
+      # (IaC misconfigs, secrets, SCA) as a PR comment automatically.
+      #
+      # Store these as repo secrets first:
+      #   CORTEX_API_URL, CORTEX_ACCESS_KEY_ID, CORTEX_SECRET_KEY
+      # -----------------------------------------------------------------
+      - name: Cortex Cloud scan (IaC + secrets + SCA)
+        env:
+          CORTEX_API_URL: ${{ secrets.CORTEX_API_URL }}
+          CORTEX_ACCESS_KEY_ID: ${{ secrets.CORTEX_ACCESS_KEY_ID }}
+          CORTEX_SECRET_KEY: ${{ secrets.CORTEX_SECRET_KEY }}
+        run: |
+          echo "Replace this with your tenant's Cortex Cloud CI/CD action."
+          exit 1
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom.cyclonedx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.cyclonedx.json

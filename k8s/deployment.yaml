@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cortex-demo-app
+  labels:
+    app: cortex-demo-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cortex-demo-app
+  template:
+    metadata:
+      labels:
+        app: cortex-demo-app
+    spec:
+      containers:
+        - name: cortex-demo-app
+          image: ghcr.io/aure-sandbox-pan/cortex-demo-code-to-cloud:1.0.0
+          ports:
+            - containerPort: 5000
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000

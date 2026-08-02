@@ -1,0 +1,6 @@
+flask==3.0.0
+
+# Intentionally vulnerable: CVE-2023-32681 (credentials leak via proxy-authorization
+# header on cross-origin redirects). Fixed in 2.31.0 - used live in the demo to show
+# Cortex SCA detection + the "upgrade to >= 2.31.0" remediation suggestion.
+requests==2.25.1

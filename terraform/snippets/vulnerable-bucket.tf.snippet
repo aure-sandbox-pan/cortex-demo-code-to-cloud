@@ -1,0 +1,21 @@
+# --- LIVE DEMO BAKE (Phase 1) ---------------------------------------------
+# Paste this block at the end of terraform/main.tf while recording, right
+# after opening the file in VS Code. The Cortex IDE extension should
+# underline both issues as you type/save:
+#   - public ACL on the bucket (CKV_AWS_20 / CKV_AWS_53-56)
+#   - hardcoded AWS credentials (secrets scanning)
+# ---------------------------------------------------------------------------
+
+resource "aws_s3_bucket_acl" "app_assets_public" {
+  bucket = aws_s3_bucket.app_assets.id
+  acl    = "public-read"
+}
+
+# Hardcoded credential - flagged by Cortex secrets scanning.
+# Uses AWS's own published documentation example key pair (not a real secret).
+locals {
+  backup_script_credentials = {
+    aws_access_key_id     = "AKIAIOSFODNN7EXAMPLE"
+    aws_secret_access_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  }
+}

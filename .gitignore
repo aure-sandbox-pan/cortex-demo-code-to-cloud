@@ -1,0 +1,7 @@
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+__pycache__/
+*.pyc
+sbom.cyclonedx.json
