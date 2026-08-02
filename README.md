@@ -19,24 +19,56 @@ code-to-cloud tracing in Cortex Cloud.
   resource limits, mutable tag) for the live Admission Control rejection.
 - `.github/workflows/ci.yml` - PR pipeline: Cortex Cloud scan + SBOM
   generation.
+- `scripts/bootstrap.sh` / `scripts/teardown.sh` - one-command AWS↔GitHub
+  setup and teardown, see below. This is what makes the repo reusable by
+  another CSE against their own AWS account/GitHub fork with near-zero
+  manual steps.
+
+## Reusing this repo for your own demo session
+
+Designed so a different CSE can fork this repo, point it at their own AWS
+sandbox, and be demo-ready with two commands:
+
+1. Fork/clone the repo, get AWS credentials for your sandbox account active
+   in your shell (`aws sts get-caller-identity` must return the target
+   account - see your sandbox's onboarding email for how, e.g. `aws sso
+   login` or `aws configure`).
+2. `./scripts/bootstrap.sh` - detects your GitHub org/repo from `git remote`,
+   applies `terraform-bootstrap/` (state bucket, GitHub OIDC provider, CD
+   IAM role scoped to your fork), and sets the required GitHub Actions
+   variables automatically via `gh` CLI (falls back to printing the values
+   for manual entry if `gh` isn't authenticated).
+3. Commit and push to `main` - `.github/workflows/cd.yml` takes it from
+   there: provisions the EKS cluster, ECR repo and app bucket, builds and
+   deploys the app. Budget ~15-20 min for the EKS cluster on first run.
+4. After your recording/session: `./scripts/teardown.sh` destroys the EKS
+   cluster, ECR repo and app bucket so nothing keeps billing between
+   sessions. It does *not* touch the OIDC provider/CD role/state bucket, so
+   the next `git push` alone re-provisions everything.
+
+Nothing in `terraform/` or `terraform-bootstrap/` has your org/account
+hardcoded - `bootstrap.sh` passes your repo/region as `-var` overrides.
 
 ## Prerequisites before recording
 
 1. **AWS account onboarded to Cortex Cloud** (for the Terraform IaC scan and
    the code-to-cloud graph tracing in Phase 3).
-2. **EKS or GKE cluster** with the Cortex Cloud Kubernetes agent and
-   admission controller installed and enforcing (not just monitoring).
-3. **VS Code with the Cortex Cloud extension** installed and signed in.
-4. **GitHub repo secrets** configured: `CORTEX_API_URL`,
+2. **AWS↔GitHub CI/CD wired up** - see "Reusing this repo" above.
+3. **Cortex Cloud Kubernetes agent and admission controller** installed and
+   enforcing (not just monitoring) on the EKS cluster once `cd.yml` has
+   created it - this is a manual step from the Cortex Cloud console, not
+   something Terraform provisions.
+4. **VS Code with the Cortex Cloud extension** installed and signed in.
+5. **GitHub repo secrets** configured: `CORTEX_API_URL`,
    `CORTEX_ACCESS_KEY_ID`, `CORTEX_SECRET_KEY`.
-5. **Replace the placeholder step** in `.github/workflows/ci.yml` (currently
+6. **Replace the placeholder step** in `.github/workflows/ci.yml` (currently
    `exit 1`) with the exact CI/CD integration snippet from your tenant:
    Cortex Cloud console > Settings > Integrations > Pipelines > GitHub
    Actions. Test it on a throwaway PR before recording - a forgotten
    placeholder will fail the pipeline even on clean code in Phase 4.
-6. **Build and push the base image once** so `k8s/deployment.yaml`'s pinned
-   tag resolves, and the container registry exists for the live rebuild in
-   Phase 4.
+7. **Let one full `cd.yml` run complete once** before recording (EKS cluster
+   creation alone takes ~15-20 min) so `k8s/deployment.yaml`'s image
+   resolves and the live rebuild in Phase 4 is fast.
 
 ## Suggested flow (matches the 30-min agenda)
 

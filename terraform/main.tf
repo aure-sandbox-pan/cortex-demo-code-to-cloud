@@ -10,14 +10,11 @@ resource "aws_s3_bucket" "app_assets" {
   bucket = "cortex-demo-app-assets-${random_id.suffix.hex}"
 }
 
-resource "aws_s3_bucket_public_access_block" "app_assets" {
-  bucket                  = aws_s3_bucket.app_assets.id
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
+# No aws_s3_bucket_public_access_block resource here: this account's SCP
+# denies s3:PutBucketPublicAccessBlock outright (see terraform-bootstrap/
+# main.tf). Doesn't affect the Phase 1 demo - the vulnerable-bucket snippet
+# is caught by Cortex's static IaC scan on the Terraform code itself, never
+# actually applied.
 resource "aws_s3_bucket_server_side_encryption_configuration" "app_assets" {
   bucket = aws_s3_bucket.app_assets.id
 

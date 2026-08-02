@@ -16,7 +16,8 @@ spec:
     spec:
       containers:
         - name: cortex-demo-app
-          image: ghcr.io/aure-sandbox-pan/cortex-demo-code-to-cloud:1.0.0
+          # Replaced by .github/workflows/cd.yml with the real ECR image URI:tag at deploy time
+          image: IMAGE_PLACEHOLDER
           ports:
             - containerPort: 5000
           securityContext:

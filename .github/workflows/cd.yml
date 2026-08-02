@@ -1,0 +1,99 @@
+name: CD - Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write # required for OIDC -> AWS role assumption
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  EKS_CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME }}
+  ECR_REPOSITORY: ${{ github.event.repository.name }}
+
+jobs:
+  terraform-apply:
+    runs-on: ubuntu-latest
+    outputs:
+      ecr_repository_url: ${{ steps.tf_output.outputs.ecr_repository_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_CD_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform init
+        working-directory: terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ vars.TFSTATE_BUCKET }}" \
+            -backend-config="key=${{ github.event.repository.name }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
+
+      - name: Terraform apply
+        working-directory: terraform
+        run: |
+          terraform apply -auto-approve \
+            -var="aws_region=${{ env.AWS_REGION }}" \
+            -var="eks_cluster_name=${{ env.EKS_CLUSTER_NAME }}" \
+            -var="github_repo=${{ env.ECR_REPOSITORY }}"
+
+      - name: Read ECR repository URL
+        id: tf_output
+        working-directory: terraform
+        run: echo "ecr_repository_url=$(terraform output -raw ecr_repository_url)" >> "$GITHUB_OUTPUT"
+
+  build-and-push:
+    needs: terraform-apply
+    runs-on: ubuntu-latest
+    outputs:
+      image_uri: ${{ steps.image.outputs.uri }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_CD_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr-login
+
+      - name: Build, tag and push image
+        id: image
+        env:
+          REGISTRY: ${{ needs.terraform-apply.outputs.ecr_repository_url }}
+          TAG: ${{ github.sha }}
+        run: |
+          docker build -t "$REGISTRY:$TAG" .
+          docker push "$REGISTRY:$TAG"
+          echo "uri=$REGISTRY:$TAG" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_CD_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name "$EKS_CLUSTER_NAME" --region "$AWS_REGION"
+
+      - name: Substitute image and deploy
+        env:
+          IMAGE_URI: ${{ needs.build-and-push.outputs.image_uri }}
+        run: |
+          sed -i "s|IMAGE_PLACEHOLDER|$IMAGE_URI|" k8s/deployment.yaml
+          kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml
+          kubectl rollout status deployment/cortex-demo-app --timeout=120s
