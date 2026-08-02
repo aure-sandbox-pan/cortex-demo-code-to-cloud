@@ -119,11 +119,15 @@ data "aws_iam_policy_document" "github_actions_permissions" {
     ]
   }
 
-  # Default VPC/subnet lookups for the EKS network config.
+  # Default VPC/subnet lookups for the EKS network config. Read-only
+  # wildcard (not narrowed to specific Describe calls) since Terraform's AWS
+  # provider makes several undocumented-in-advance Describe* calls when
+  # reading VPC/subnet data sources (e.g. DescribeVpcAttribute alongside
+  # DescribeVpcs).
   statement {
     sid       = "Ec2ReadOnly"
     effect    = "Allow"
-    actions   = ["ec2:DescribeVpcs", "ec2:DescribeSubnets", "ec2:DescribeAvailabilityZones"]
+    actions   = ["ec2:Describe*"]
     resources = ["*"]
   }
 
