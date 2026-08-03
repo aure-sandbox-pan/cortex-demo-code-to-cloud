@@ -52,7 +52,42 @@ code-to-cloud tracing in Cortex Cloud.
    (`./scripts/bootstrap.sh`, then push to `main`).
 
 4. **AWS account onboarded to Cortex Cloud** (for the Terraform IaC scan and
-   the code-to-cloud graph tracing in Phase 3).
+   the code-to-cloud graph tracing in Phase 3). In the Cortex Cloud console:
+   - **Settings > Data Sources & Integrations > Add New > AWS > Add Another
+     Instance**.
+   - **Scope: `Account`**.
+   - **Scan Mode: `Cloud Scan`** (recommended default).
+   - Under **Show advanced settings > Log Collection Configuration >
+     Collect Audit Logs**: choose **`Use Automated collection`**, not
+     `Custom (user defined)`. Custom expects a CloudTrail bucket + SNS topic
+     ARN to already exist in the account (it only subscribes to them, it
+     doesn't create them) - our Terraform doesn't provision any CloudTrail
+     infra, so Custom would get stuck asking for values that don't exist.
+     Automated collection creates its own dedicated CloudTrail/S3/SNS/SQS as
+     part of the onboarding stack instead.
+   - Leave "Collect data events" unchecked - it's CloudTrail data-level
+     events (S3 object access, Lambda invocations); nothing in this demo
+     needs it, and it's the more expensive/higher-volume log type.
+   - Under **Cloud Tags**, add a tag (e.g. Key `Project`, Value
+     `Cortex-demo-Code-to-Cloud`) so resources Cortex creates are
+     identifiable - then **Save**.
+   - Choose **Automated - Execute in AWS** - this
+     opens a pre-filled CloudFormation "Quick create stack" page in a new
+     tab/step, with all of Cortex's own parameters already populated.
+   - On that CloudFormation page: give the stack a name (e.g.
+     `cortex-demo-code-to-cloud`), optionally add the same `Project` tag
+     under "Tags - optional", scroll to **Capabilities** and check **"I
+     acknowledge that AWS CloudFormation might create IAM resources with
+     custom names"**, then **Create stack**.
+   - Wait for the stack to reach `CREATE_COMPLETE` (a couple of minutes),
+     then go back to the Cortex Cloud tab - it should show "Instance
+     Created Successfully / Your AWS instance has been successfully
+     connected".
+   - Note: this CloudFormation stack is separate from `terraform/` and is
+     **not** destroyed by `scripts/teardown.sh` - delete it by hand
+     (CloudFormation > Stacks > Delete) if you want a full cleanup, or just
+     leave it since the whole Torque account gets torn down at expiry
+     anyway.
 
 5. **Cortex Cloud Kubernetes agent and admission controller** installed and
    enforcing (not just monitoring) on the EKS cluster once `cd.yml` has
