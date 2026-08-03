@@ -21,4 +21,14 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+
+  # Applied to every resource that supports tagging, so this demo's
+  # resources are identifiable (and filterable by "Tags") once discovered
+  # by Cortex Cloud - separate from the tag Cortex applies to its own
+  # onboarding infrastructure, which doesn't touch pre-existing resources.
+  default_tags {
+    tags = {
+      Project = "cortex-demo-code-to-cloud"
+    }
+  }
 }
