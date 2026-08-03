@@ -24,24 +24,71 @@ code-to-cloud tracing in Cortex Cloud.
   another CSE against their own AWS account/GitHub fork with near-zero
   manual steps.
 
+## Prerequisites
+
+1. **Provision a sandbox AWS account via Torque**
+   ([laas.paloaltonetworks.com/GCS](https://laas.paloaltonetworks.com/GCS),
+   blueprint "Provision AWS Account"). You'll get an email with the new
+   account ID and a switch-role link into `TorqueUserRole`
+   (`AdministratorAccess`). Note the account's expiry date - it's torn down
+   automatically by Torque, so time the rest of this list accordingly.
+
+2. **Get AWS CLI credentials for that account**, via the AWS Console +
+   CloudShell (Torque access is an Okta SAML app tile, not IAM Identity
+   Center - there's no SSO portal URL to point a CLI tool at):
+   - Log in via Okta (GlobalProtect VPN required) → switch role into
+     `TorqueUserRole` in the AWS Console for your provisioned account.
+   - Open **CloudShell** (top nav bar) - it inherits that session's
+     credentials automatically, no extra auth needed.
+   - Run `aws configure export-credentials --format env` and copy the three
+     `export AWS_...` lines into your local shell. These are short-lived
+     (session-length) - re-run this whenever they expire, e.g. before
+     re-running `bootstrap.sh`.
+   - Note: this account's org-wide SCPs block `iam:CreateUser` and a few
+     other actions - don't try to create a static-credential IAM user
+     instead, it will be denied.
+
+3. **AWS↔GitHub CI/CD wired up** - see "Reusing this repo" below
+   (`./scripts/bootstrap.sh`, then push to `main`).
+
+4. **AWS account onboarded to Cortex Cloud** (for the Terraform IaC scan and
+   the code-to-cloud graph tracing in Phase 3).
+
+5. **Cortex Cloud Kubernetes agent and admission controller** installed and
+   enforcing (not just monitoring) on the EKS cluster once `cd.yml` has
+   created it - this is a manual step from the Cortex Cloud console, not
+   something Terraform provisions.
+
+6. **VS Code with the Cortex Cloud extension** installed and signed in.
+
+7. **GitHub repo secrets** configured: `CORTEX_API_URL`,
+   `CORTEX_ACCESS_KEY_ID`, `CORTEX_SECRET_KEY`.
+
+8. **Replace the placeholder step** in `.github/workflows/ci.yml` (currently
+   `exit 1`) with the exact CI/CD integration snippet from your tenant:
+   Cortex Cloud console > Settings > Integrations > Pipelines > GitHub
+   Actions. Test it on a throwaway PR before recording - a forgotten
+   placeholder will fail the pipeline even on clean code in Phase 4.
+
+9. **Let one full `cd.yml` run complete once** before recording (EKS cluster
+   creation alone takes ~15-20 min) so `k8s/deployment.yaml`'s image
+   resolves and the live rebuild in Phase 4 is fast.
+
 ## Reusing this repo for your own demo session
 
 Designed so a different CSE can fork this repo, point it at their own AWS
-sandbox, and be demo-ready with two commands:
+sandbox, and be demo-ready with two commands - once you have AWS credentials
+in your shell:
 
-1. Fork/clone the repo, get AWS credentials for your sandbox account active
-   in your shell (`aws sts get-caller-identity` must return the target
-   account - see your sandbox's onboarding email for how, e.g. `aws sso
-   login` or `aws configure`).
-2. `./scripts/bootstrap.sh` - detects your GitHub org/repo from `git remote`,
+1. `./scripts/bootstrap.sh` - detects your GitHub org/repo from `git remote`,
    applies `terraform-bootstrap/` (state bucket, GitHub OIDC provider, CD
    IAM role scoped to your fork), and sets the required GitHub Actions
    variables automatically via `gh` CLI (falls back to printing the values
    for manual entry if `gh` isn't authenticated).
-3. Commit and push to `main` - `.github/workflows/cd.yml` takes it from
+2. Commit and push to `main` - `.github/workflows/cd.yml` takes it from
    there: provisions the EKS cluster, ECR repo and app bucket, builds and
    deploys the app. Budget ~15-20 min for the EKS cluster on first run.
-4. After your recording/session: `./scripts/teardown.sh` destroys the EKS
+3. After your recording/session: `./scripts/teardown.sh` destroys the EKS
    cluster, ECR repo and app bucket so nothing keeps billing between
    sessions. It does *not* touch the OIDC provider/CD role/state bucket, so
    the next `git push` alone re-provisions everything.
@@ -49,26 +96,39 @@ sandbox, and be demo-ready with two commands:
 Nothing in `terraform/` or `terraform-bootstrap/` has your org/account
 hardcoded - `bootstrap.sh` passes your repo/region as `-var` overrides.
 
-## Prerequisites before recording
+## Getting `kubectl` access to the cluster yourself
 
-1. **AWS account onboarded to Cortex Cloud** (for the Terraform IaC scan and
-   the code-to-cloud graph tracing in Phase 3).
-2. **AWS↔GitHub CI/CD wired up** - see "Reusing this repo" above.
-3. **Cortex Cloud Kubernetes agent and admission controller** installed and
-   enforcing (not just monitoring) on the EKS cluster once `cd.yml` has
-   created it - this is a manual step from the Cortex Cloud console, not
-   something Terraform provisions.
-4. **VS Code with the Cortex Cloud extension** installed and signed in.
-5. **GitHub repo secrets** configured: `CORTEX_API_URL`,
-   `CORTEX_ACCESS_KEY_ID`, `CORTEX_SECRET_KEY`.
-6. **Replace the placeholder step** in `.github/workflows/ci.yml` (currently
-   `exit 1`) with the exact CI/CD integration snippet from your tenant:
-   Cortex Cloud console > Settings > Integrations > Pipelines > GitHub
-   Actions. Test it on a throwaway PR before recording - a forgotten
-   placeholder will fail the pipeline even on clean code in Phase 4.
-7. **Let one full `cd.yml` run complete once** before recording (EKS cluster
-   creation alone takes ~15-20 min) so `k8s/deployment.yaml`'s image
-   resolves and the live rebuild in Phase 4 is fast.
+`cd.yml` deploys via the `github-actions-cortex-demo-cd` role, which is the
+only principal granted access to the cluster's Kubernetes API (via an EKS
+access entry in `terraform/eks.tf` - the cluster uses `authentication_mode =
+"API"`, not the legacy `aws-auth` ConfigMap). Your own IAM identity
+(`TorqueUserRole` or otherwise) is *not* automatically able to run `kubectl`
+against it, even with full `AdministratorAccess` - EKS access is a separate
+grant from IAM permissions under API mode.
+
+To debug the cluster directly (e.g. `kubectl apply -f k8s/bad-pod.yaml`
+during Phase 3, or just checking pod status), grant yourself an access entry
+once per Torque session (get AWS credentials first, see prerequisites
+above):
+
+```bash
+aws eks create-access-entry --cluster-name cortex-demo-eks --region eu-west-1 \
+  --principal-arn arn:aws:iam::<ACCOUNT_ID>:role/TorqueUserRole
+
+aws eks associate-access-policy --cluster-name cortex-demo-eks --region eu-west-1 \
+  --principal-arn arn:aws:iam::<ACCOUNT_ID>:role/TorqueUserRole \
+  --policy-arn arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy \
+  --access-scope type=cluster
+
+aws eks update-kubeconfig --name cortex-demo-eks --region eu-west-1
+kubectl get pods
+```
+
+This is intentionally done by hand via the CLI, not added to Terraform: it's
+tied to your personal principal (`TorqueUserRole` is shared/regenerated per
+Torque environment, not a stable identity worth encoding into shared infra
+code), and it only matters for interactive debugging - the actual demo flow
+never needs you to run `kubectl` outside of what's already scripted.
 
 ## Suggested flow (matches the 30-min agenda)
 
