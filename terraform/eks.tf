@@ -117,6 +117,36 @@ resource "aws_eks_access_policy_association" "github_actions_admin" {
   }
 }
 
+# Cortex Cloud's cross-account roles (created by the "Automated - Execute in
+# AWS" CloudFormation stack during onboarding, see README prerequisite 4).
+# Their name suffix is tenant-specific, so we discover them by prefix rather
+# than hardcoding one tenant's exact role name - this keeps the grant working
+# for any team/tenant that reuses this repo. Without an EKS access entry,
+# Cortex Cloud's agentless Kubernetes Security scan fails with a 403 calling
+# the EKS API (this cluster uses authentication_mode = "API", which requires
+# an explicit access entry per principal). Resolves to an empty set (and
+# creates nothing) if the CFN stack hasn't been created yet.
+data "aws_iam_roles" "cortex_platform" {
+  name_regex = "^CortexPlatform(Scanner)?Role-.*"
+}
+
+resource "aws_eks_access_entry" "cortex_platform" {
+  for_each      = data.aws_iam_roles.cortex_platform.arns
+  cluster_name  = aws_eks_cluster.this.name
+  principal_arn = each.value
+}
+
+resource "aws_eks_access_policy_association" "cortex_platform_view" {
+  for_each      = data.aws_iam_roles.cortex_platform.arns
+  cluster_name  = aws_eks_cluster.this.name
+  principal_arn = each.value
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}
+
 output "eks_cluster_name" {
   value = aws_eks_cluster.this.name
 }
