@@ -218,6 +218,19 @@ data "aws_iam_policy_document" "github_actions_permissions" {
     actions   = ["kms:GenerateDataKey", "kms:Decrypt", "kms:DescribeKey"]
     resources = ["*"]
   }
+
+  # terraform/eks.tf discovers Cortex Cloud's cross-account roles by name
+  # prefix (their tenant-specific suffix isn't known in advance) to grant
+  # them an EKS access entry. ListRoles has no resource-level permissions in
+  # IAM - it can only be granted on "*" - but it's read-only (role names/ARNs
+  # only, not their policies), so the exposure is limited to enumerating role
+  # names.
+  statement {
+    sid       = "ListRolesForCortexDiscovery"
+    effect    = "Allow"
+    actions   = ["iam:ListRoles"]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "github_actions_cd" {
