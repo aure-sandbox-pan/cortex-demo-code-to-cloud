@@ -9,8 +9,37 @@ Git commit to Kubernetes runtime." Ties together IDE scanning, IaC/secrets
 scanning, SCA + SBOM, CI/CD guardrails, Kubernetes admission control, and
 code-to-cloud tracing in Cortex Cloud.
 
+## Architecture
+
+[`docs/architecture.drawio`](docs/architecture.drawio) has the full diagram —
+every AWS resource this repo provisions (official colored service icons),
+the CI/CD flow that creates them, and the three vulnerabilities the demo
+intentionally bakes in, each tied to the Cortex Cloud module that's meant to
+catch it. GitHub doesn't render `.drawio` files inline, so open it with the
+[draw.io desktop app](https://github.com/jgraph/drawio-desktop/releases), the
+[draw.io VS Code extension](https://marketplace.visualstudio.com/items?itemName=hediet.vscode-drawio),
+or by importing it at [app.diagrams.net](https://app.diagrams.net).
+
+Summary of the three intentional vulnerabilities (also called out in red on
+the diagram, numbered to match the "Suggested flow" table below):
+
+| # | Where it's introduced | What it is | Caught by |
+|---|---|---|---|
+| ① | `terraform/snippets/vulnerable-bucket.tf.snippet`, pasted live into `terraform/main.tf` | Public-read S3 ACL + hardcoded AWS credentials (AWS's own example key pair) | Cortex Cloud **IDE extension** — flagged in VS Code before commit, never actually applied |
+| ② | `app/requirements.txt` — `requests==2.25.1` | CVE-2023-32681 (credential leak via `Proxy-Authorization` header on cross-origin redirects) | Cortex Cloud **CI scan (SCA)** in `ci.yml`, backed by the generated SBOM — blocks the PR |
+| ③ | `k8s/bad-pod.yaml`, applied manually in Phase 3 | Privileged container, `runAsUser 0`, `hostNetwork`, mutable `:latest` tag, no CPU/memory limits | Cortex Cloud **Kubernetes admission controller (KSPM)** — rejected before the pod is scheduled |
+
+Everything else in the diagram (EKS cluster, node group, ECR repo, the two
+S3 buckets, IAM roles/OIDC provider) is real, compliant infrastructure the
+demo provisions via `terraform/` and `terraform-bootstrap/` — Cortex Cloud's
+**Cloud Scan (CSPM)** gives agentless visibility into all of it, and the
+**Code-to-Cloud graph** ties any alert back to the exact repo/commit that
+introduced it.
+
 ## Structure
 
+- `docs/architecture.drawio` - full architecture diagram (AWS resources +
+  intentional vulnerabilities), see "Architecture" above.
 - `app/` - minimal Flask app with an intentionally outdated dependency
   (`requests==2.25.1`, CVE-2023-32681, fixed in 2.31.0) for the SCA demo.
 - `Dockerfile` - packages the app.

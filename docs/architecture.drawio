@@ -1,0 +1,104 @@
+<mxfile host="app.diagrams.net" agent="cortex-demo-code-to-cloud" version="24.7.0">
+  <diagram name="Architecture" id="cortex-demo-architecture">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+<mxCell id="1" parent="0" />
+<mxCell id="zone131" value="🟢  Cortex Cloud — détection &amp; blocage (relie chaque alerte au commit exact)" style="rounded=1;arcSize=3;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=14;spacingTop=10;fontSize=15;fontStyle=1;fontColor=#00CC66;fillColor=#F2FDF7;strokeColor=#00CC66;dashed=1;" vertex="1" parent="1"><mxGeometry x="40.0" y="1070.0" width="1520.0" height="248.0" as="geometry" /></mxCell>
+<mxCell id="zone116" value="3⃣  Compte AWS — eu-west-1  (tout est provisionné par terraform/ + terraform-bootstrap/)" style="rounded=1;arcSize=3;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=14;spacingTop=10;fontSize=15;fontStyle=1;fontColor=#232F3E;fillColor=#F2F8FC;strokeColor=#232F3E;dashed=1;" vertex="1" parent="1"><mxGeometry x="580.0" y="100.0" width="980.0" height="856.0" as="geometry" /></mxCell>
+<mxCell id="zone124" value="VPC (default)" style="rounded=1;arcSize=3;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=14;spacingTop=10;fontSize=15;fontStyle=1;fontColor=#8C4FFF;fillColor=#FFFFFF;strokeColor=#8C4FFF;dashed=1;" vertex="1" parent="1"><mxGeometry x="604.0" y="424.0" width="932.0" height="488.0" as="geometry" /></mxCell>
+<mxCell id="zone125" value="Amazon EKS — cortex-demo-eks  (v1.31, authentication_mode = API)" style="rounded=1;arcSize=3;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=14;spacingTop=10;fontSize=15;fontStyle=1;fontColor=#ED7100;fillColor=#FFF8F2;strokeColor=#ED7100;dashed=1;" vertex="1" parent="1"><mxGeometry x="628.0" y="468.0" width="884.0" height="404.0" as="geometry" /></mxCell>
+<mxCell id="zone106" value="2⃣  GitHub — CI/CD" style="rounded=1;arcSize=3;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=14;spacingTop=10;fontSize=15;fontStyle=1;fontColor=#24292F;fillColor=#FAFAFA;strokeColor=#24292F;dashed=1;" vertex="1" parent="1"><mxGeometry x="40.0" y="544.0" width="480.0" height="476.0" as="geometry" /></mxCell>
+<mxCell id="zone101" value="1⃣  Poste développeur" style="rounded=1;arcSize=3;whiteSpace=wrap;html=1;verticalAlign=top;align=left;spacingLeft=14;spacingTop=10;fontSize=15;fontStyle=1;fontColor=#444444;fillColor=#FAFAFA;strokeColor=#444444;dashed=1;" vertex="1" parent="1"><mxGeometry x="40.0" y="100.0" width="480.0" height="404.0" as="geometry" /></mxCell>
+<mxCell id="n102" value="Développeur" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#444444;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.user;" vertex="1" parent="1"><mxGeometry x="64.0" y="156.0" width="64.0" height="56.0" as="geometry" /></mxCell>
+<mxCell id="n103" value="VS Code
++ extension Cortex Cloud" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EAFBF2;strokeColor=#00CC66;dashed=0;fontSize=11;fontColor=#232F3E;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" vertex="1" parent="1"><mxGeometry x="142.0" y="156.0" width="354.0" height="56.0" as="geometry" /></mxCell>
+<mxCell id="n104" value="terraform/main.tf
+bucket S3 — baseline conforme" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#7B42BC;dashed=0;fontSize=11;fontColor=#232F3E;align=center;verticalAlign=middle;fontStyle=0;spacing=6;" vertex="1" parent="1"><mxGeometry x="64.0" y="268.0" width="432.0" height="70.0" as="geometry" /></mxCell>
+<mxCell id="n105" value="🚨 VULN ① — snippet collé en live pendant la démo
+(terraform/snippets/
+vulnerable-bucket.tf.snippet)
+• ACL S3 public-read
+• clé AWS en dur (exemple AWS)" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FDECEA;strokeColor=#DD344C;dashed=1;fontSize=11;fontColor=#DD344C;align=center;verticalAlign=middle;fontStyle=0;spacing=6;" vertex="1" parent="1"><mxGeometry x="64.0" y="354.0" width="432.0" height="110.0" as="geometry" /></mxCell>
+<mxCell id="n107" value="Pull Request  (branche → main)" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#24292F;strokeColor=#24292F;dashed=0;fontSize=11;fontColor=#FFFFFF;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" vertex="1" parent="1"><mxGeometry x="64.0" y="600.0" width="432.0" height="44.0" as="geometry" /></mxCell>
+<mxCell id="n108" value=".github/workflows/ci.yml — CI Guardrails (sur PR)" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EEEEEE;strokeColor=#24292F;dashed=0;fontSize=10;fontColor=#24292F;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" vertex="1" parent="1"><mxGeometry x="64.0" y="660.0" width="432.0" height="36.0" as="geometry" /></mxCell>
+<mxCell id="n109" value="Cortex Cloud scan
+IaC + secrets + SCA" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EAFBF2;strokeColor=#00CC66;dashed=0;fontSize=11;fontColor=#232F3E;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" vertex="1" parent="1"><mxGeometry x="73.0" y="706.0" width="210.0" height="64.0" as="geometry" /></mxCell>
+<mxCell id="n110" value="SBOM (CycloneDX)
+anchore/sbom-action" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#8C8C8C;dashed=0;fontSize=11;fontColor=#232F3E;align=center;verticalAlign=middle;fontStyle=0;spacing=6;" vertex="1" parent="1"><mxGeometry x="297.0" y="706.0" width="190.0" height="64.0" as="geometry" /></mxCell>
+<mxCell id="n111" value="🚨 VULN ② — app/requirements.txt
+requests==2.25.1  (CVE-2023-32681)
+fuite d'identifiants via en-tête Proxy-Authorization" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FDECEA;strokeColor=#DD344C;dashed=1;fontSize=11;fontColor=#DD344C;align=center;verticalAlign=middle;fontStyle=0;spacing=6;" vertex="1" parent="1"><mxGeometry x="64.0" y="786.0" width="432.0" height="72.0" as="geometry" /></mxCell>
+<mxCell id="n112" value=".github/workflows/cd.yml — CD Deploy (push → main)" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#EEEEEE;strokeColor=#24292F;dashed=0;fontSize=10;fontColor=#24292F;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" vertex="1" parent="1"><mxGeometry x="64.0" y="874.0" width="432.0" height="36.0" as="geometry" /></mxCell>
+<mxCell id="n113" value="① terraform apply
+(EKS, ECR, S3, IAM)" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#7B42BC;dashed=0;fontSize=11;fontColor=#232F3E;align=center;verticalAlign=middle;fontStyle=0;spacing=6;" vertex="1" parent="1"><mxGeometry x="64.0" y="920.0" width="148.0" height="60.0" as="geometry" /></mxCell>
+<mxCell id="n114" value="② docker build
+&amp; push → ECR" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#ED7100;dashed=0;fontSize=11;fontColor=#232F3E;align=center;verticalAlign=middle;fontStyle=0;spacing=6;" vertex="1" parent="1"><mxGeometry x="226.0" y="920.0" width="148.0" height="60.0" as="geometry" /></mxCell>
+<mxCell id="n115" value="③ kubectl apply
+→ EKS" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#326CE5;dashed=0;fontSize=11;fontColor=#232F3E;align=center;verticalAlign=middle;fontStyle=0;spacing=6;" vertex="1" parent="1"><mxGeometry x="388.0" y="920.0" width="148.0" height="60.0" as="geometry" /></mxCell>
+<mxCell id="n117" value="OIDC Provider
+(GitHub Actions)" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#DD344C;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.identity and access management;" vertex="1" parent="1"><mxGeometry x="765.0" y="164.0" width="130.0" height="60.0" as="geometry" /></mxCell>
+<mxCell id="n118" value="IAM Role
+CD (GitHub OIDC)" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#DD344C;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.role;" vertex="1" parent="1"><mxGeometry x="925.0" y="164.0" width="130.0" height="60.0" as="geometry" /></mxCell>
+<mxCell id="n119" value="IAM Role
+EKS cluster" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#DD344C;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.role;" vertex="1" parent="1"><mxGeometry x="1085.0" y="164.0" width="130.0" height="60.0" as="geometry" /></mxCell>
+<mxCell id="n120" value="IAM Role
+EKS nodes" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#DD344C;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.role;" vertex="1" parent="1"><mxGeometry x="1245.0" y="164.0" width="130.0" height="60.0" as="geometry" /></mxCell>
+<mxCell id="n121" value="Amazon S3
+État Terraform
+versionné + AES256" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#7AA116;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.s3;" vertex="1" parent="1"><mxGeometry x="755.0" y="292.0" width="190.0" height="60.0" as="geometry" /></mxCell>
+<mxCell id="n122" value="Amazon S3
+Assets applicatifs
+versionné + KMS" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#7AA116;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.s3;" vertex="1" parent="1"><mxGeometry x="975.0" y="292.0" width="190.0" height="60.0" as="geometry" /></mxCell>
+<mxCell id="n123" value="Amazon ECR
+scan on push
+tags immuables" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#ED7100;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.ecr;" vertex="1" parent="1"><mxGeometry x="1195.0" y="292.0" width="190.0" height="60.0" as="geometry" /></mxCell>
+<mxCell id="n126" value="EKS
+Control plane" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#ED7100;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.eks;" vertex="1" parent="1"><mxGeometry x="925.0" y="508.0" width="130.0" height="60.0" as="geometry" /></mxCell>
+<mxCell id="n127" value="Node group
+t3.medium × 1-2" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#ED7100;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.instance;" vertex="1" parent="1"><mxGeometry x="1085.0" y="508.0" width="130.0" height="60.0" as="geometry" /></mxCell>
+<mxCell id="n128" value="Deployment
+cortex-demo-app ×2
+non-root • RO fs • cap drop ALL" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#326CE5;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.kubernetes.deploy;" vertex="1" parent="1"><mxGeometry x="865.0" y="636.0" width="190.0" height="56.0" as="geometry" /></mxCell>
+<mxCell id="n129" value="Service
+ClusterIP  :80 → 5000" style="sketch=0;outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#326CE5;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.kubernetes.svc;" vertex="1" parent="1"><mxGeometry x="1085.0" y="636.0" width="190.0" height="56.0" as="geometry" /></mxCell>
+<mxCell id="n130" value="🚨 VULN ③ — k8s/bad-pod.yaml (kubectl apply manuel, Phase 3)
+privileged • runAsUser 0 • hostNetwork • tag :latest • sans limites CPU/RAM" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FDECEA;strokeColor=#DD344C;dashed=1;fontSize=11;fontColor=#DD344C;align=center;verticalAlign=middle;fontStyle=0;spacing=6;" vertex="1" parent="1"><mxGeometry x="652.0" y="760.0" width="836.0" height="76.0" as="geometry" /></mxCell>
+<mxCell id="n132" value="IDE Extension
+(VS Code)
+flag IaC + secrets avant commit" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00CC66;dashed=0;fontSize=11;fontColor=#232F3E;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" vertex="1" parent="1"><mxGeometry x="214.0" y="1122.0" width="260.0" height="100.0" as="geometry" /></mxCell>
+<mxCell id="n133" value="CI/CD Pipeline Scan
+IaC + secrets + SCA + SBOM
+(bloque la PR)" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00CC66;dashed=0;fontSize=11;fontColor=#232F3E;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" vertex="1" parent="1"><mxGeometry x="498.0" y="1122.0" width="260.0" height="100.0" as="geometry" /></mxCell>
+<mxCell id="n134" value="Cloud Scan (CSPM)
+visibilité agentless du compte AWS
+(read-only, via stack CloudFormation)" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00CC66;dashed=0;fontSize=11;fontColor=#232F3E;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" vertex="1" parent="1"><mxGeometry x="782.0" y="1122.0" width="300.0" height="100.0" as="geometry" /></mxCell>
+<mxCell id="n135" value="Agent K8s +
+Admission Controller (KSPM)
+bloque avant scheduling" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#00CC66;dashed=0;fontSize=11;fontColor=#232F3E;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" vertex="1" parent="1"><mxGeometry x="1106.0" y="1122.0" width="280.0" height="100.0" as="geometry" /></mxCell>
+<mxCell id="n136" value="Code-to-Cloud Graph — relie une alerte cloud/K8s jusqu'au repo + commit exact qui l'a introduite" style="rounded=1;arcSize=8;whiteSpace=wrap;html=1;fillColor=#00CC66;strokeColor=#00CC66;dashed=0;fontSize=11;fontColor=#FFFFFF;align=center;verticalAlign=middle;fontStyle=1;spacing=6;" vertex="1" parent="1"><mxGeometry x="64.0" y="1238.0" width="1472.0" height="56.0" as="geometry" /></mxCell>
+<mxCell id="n137" value="🚨 rouge pointillé = vulnérabilité intentionnelle introduite par la démo   |   🟢 vert = détection / blocage Cortex Cloud   |   ① ② ③ = phases du tableau « Suggested flow » du README" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CCCCCC;fontSize=11;align=left;verticalAlign=middle;spacingLeft=12;spacing=4;" vertex="1" parent="1"><mxGeometry x="580.0" y="46.0" width="980.0" height="32.0" as="geometry" /></mxCell>
+<mxCell id="n138" value="Cortex Cloud — Code to Cloud Demo : Architecture &amp; Vulnérabilités" style="text;html=1;align=left;verticalAlign=middle;fontSize=20;fontStyle=1;fontColor=#232F3E;" vertex="1" parent="1"><mxGeometry x="40.0" y="10.0" width="1520.0" height="30.0" as="geometry" /></mxCell>
+<mxCell id="e139" value="flag immédiat, avant commit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#DD344C;dashed=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n105" target="n132"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e140" value="déclenche" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#666666;dashed=0;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n107" target="n108"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e141" value="❌ bloque le merge si trouvé" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#DD344C;dashed=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n109" target="n107"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e142" value="détecté (SCA)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#DD344C;dashed=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n111" target="n109"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e143" value="merge → main" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#666666;dashed=0;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n108" target="n112"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e144" value="résultats du scan" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#00CC66;dashed=0;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n109" target="n133"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e145" value="terraform apply
+(OIDC AssumeRoleWithWebIdentity)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#555555;dashed=0;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n113" target="zone116"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e146" value="docker push" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#555555;dashed=0;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n114" target="n123"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e147" value="kubectl apply" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#555555;dashed=0;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n115" target="n128"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e148" value="kubectl apply (Phase 3)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#DD344C;dashed=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n130" target="n135"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e149" value="❌ REJETÉ à l'admission" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#DD344C;dashed=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n135" target="n130"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e150" value="visibilité cloud (lecture seule)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#00CC66;dashed=1;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="zone116" target="n134"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e151" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#666666;dashed=0;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n132" target="n136"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e152" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#666666;dashed=0;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n133" target="n136"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e153" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#666666;dashed=0;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n134" target="n136"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e154" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#666666;dashed=0;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n135" target="n136"><mxGeometry relative="1" as="geometry" /></mxCell>
+<mxCell id="e155" value="trace l'alerte jusqu'au commit exact
+(Phase 4 — remediation)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=10;strokeColor=#00CC66;dashed=0;endArrow=block;endFill=1;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="n136" target="n107"><mxGeometry relative="1" as="geometry" /></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
