@@ -3,6 +3,9 @@ name: CI - Cortex Cloud Guardrails
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   cortex-scan:
@@ -10,27 +13,44 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+    env:
+      CORTEX_API_KEY: ${{secrets.CORTEX_API_KEY}}
+      CORTEX_API_KEY_ID: ${{secrets.CORTEX_API_KEY_ID}}
+      CORTEX_API_URL: https://api-justruntime.xdr.us.paloaltonetworks.com
     steps:
       - uses: actions/checkout@v4
 
-      # -----------------------------------------------------------------
-      # TODO (before recording): replace this step with the exact snippet
-      # from your tenant - Cortex Cloud console > Settings > Integrations >
-      # Pipelines > GitHub Actions. It generates the action name/version
-      # and the required inputs for your tenant, and posts scan results
-      # (IaC misconfigs, secrets, SCA) as a PR comment automatically.
-      #
-      # Store these as repo secrets first:
-      #   CORTEX_API_URL, CORTEX_ACCESS_KEY_ID, CORTEX_SECRET_KEY
-      # -----------------------------------------------------------------
-      - name: Cortex Cloud scan (IaC + secrets + SCA)
-        env:
-          CORTEX_API_URL: ${{ secrets.CORTEX_API_URL }}
-          CORTEX_ACCESS_KEY_ID: ${{ secrets.CORTEX_ACCESS_KEY_ID }}
-          CORTEX_SECRET_KEY: ${{ secrets.CORTEX_SECRET_KEY }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify Node.js Version
+        run: node -v
+
+      - name: Download cortexcli
         run: |
-          echo "Replace this with your tenant's Cortex Cloud CI/CD action."
-          exit 1
+          set -x
+          crtx_resp=$(curl "${CORTEX_API_URL}/public_api/v1/unified-cli/releases/download-link?os=linux&architecture=amd64" \
+            -H "x-xdr-auth-id: ${CORTEX_API_KEY_ID}" \
+            -H "Authorization: ${CORTEX_API_KEY}")
+          crtx_url=$(echo $crtx_resp | jq -r ".signed_url")
+          curl -o cortexcli $crtx_url
+          chmod +x cortexcli
+          ./cortexcli --version
+
+      - name: Run Cortex CLI Code Scan
+        run: |
+          ./cortexcli \
+            --api-base-url "${CORTEX_API_URL}" \
+            --api-key "${CORTEX_API_KEY}" \
+            --api-key-id "${CORTEX_API_KEY_ID}" \
+            code scan \
+            --directory "${{github.workspace}}" \
+            --repo-id "${{github.repository}}" \
+            --branch "${{github.ref_name}}" \
+            --source "GITHUB_ACTIONS" \
+            --repo-url "${{github.server_url}}/${{github.repository}}"
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
