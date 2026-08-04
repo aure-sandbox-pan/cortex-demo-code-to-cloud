@@ -39,9 +39,6 @@ jobs:
           chmod +x cortexcli
           ./cortexcli --version
 
-      - name: Cortex CLI help (debug)
-        run: ./cortexcli code scan --help
-
       - name: Run Cortex CLI Code Scan
         run: |
           ./cortexcli \
@@ -53,7 +50,7 @@ jobs:
             --repo-id "${{github.repository}}" \
             --branch "${{github.ref_name}}" \
             --source "GITHUB_ACTIONS" \
-            --repo-url "${{github.server_url}}/${{github.repository}}"
+            --create-repo-if-missing
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
