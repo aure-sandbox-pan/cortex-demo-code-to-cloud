@@ -11,14 +11,17 @@ code-to-cloud tracing in Cortex Cloud.
 
 ## Architecture
 
-[`docs/architecture.drawio`](docs/architecture.drawio) has the full diagram —
-every AWS resource this repo provisions (official colored service icons),
+![Architecture diagram](docs/architecture.png)
+
+The editable source is [`docs/architecture.drawio`](docs/architecture.drawio)
+— every AWS resource this repo provisions (official colored service icons),
 the CI/CD flow that creates them, and the three vulnerabilities the demo
 intentionally bakes in, each tied to the Cortex Cloud module that's meant to
-catch it. GitHub doesn't render `.drawio` files inline, so open it with the
+catch it. Open it with the
 [draw.io desktop app](https://github.com/jgraph/drawio-desktop/releases), the
 [draw.io VS Code extension](https://marketplace.visualstudio.com/items?itemName=hediet.vscode-drawio),
-or by importing it at [app.diagrams.net](https://app.diagrams.net).
+or by importing it at [app.diagrams.net](https://app.diagrams.net) — and
+re-export to `docs/architecture.png` (File > Export as > PNG) if you edit it.
 
 Summary of the three intentional vulnerabilities (also called out in red on
 the diagram, numbered to match the "Suggested flow" table below):
@@ -38,8 +41,9 @@ introduced it.
 
 ## Structure
 
-- `docs/architecture.drawio` - full architecture diagram (AWS resources +
-  intentional vulnerabilities), see "Architecture" above.
+- `docs/architecture.drawio` / `docs/architecture.png` - full architecture
+  diagram (AWS resources + intentional vulnerabilities), see "Architecture"
+  above.
 - `app/` - minimal Flask app with an intentionally outdated dependency
   (`requests==2.25.1`, CVE-2023-32681, fixed in 2.31.0) for the SCA demo.
 - `Dockerfile` - packages the app.
