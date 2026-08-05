@@ -39,6 +39,12 @@ jobs:
           chmod +x cortexcli
           ./cortexcli --version
 
+      - name: Cortex CLI top-level help (debug)
+        run: ./cortexcli --help
+
+      - name: Cortex CLI code --help (debug)
+        run: ./cortexcli code --help
+
       - name: Run Cortex CLI Code Scan
         run: |
           ./cortexcli \
