@@ -10,6 +10,20 @@ resource "aws_s3_bucket" "app_assets" {
   bucket = "cortex-demo-app-assets-${random_id.suffix.hex}"
 }
 
+resource "aws_s3_bucket_acl" "app_assets_public" {
+  bucket = aws_s3_bucket.app_assets.id
+  acl    = "public-read"
+}
+
+# Hardcoded credential - flagged by Cortex secrets scanning.
+# Uses AWS's own published documentation example key pair (not a real secret).
+locals {
+  backup_script_credentials = {
+    aws_access_key_id     = "AKIAIOSFODNN7EXAMPLE"
+    aws_secret_access_key = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  }
+}
+
 # No aws_s3_bucket_public_access_block resource here: this account's SCP
 # denies s3:PutBucketPublicAccessBlock outright (see terraform-bootstrap/
 # main.tf). Doesn't affect the Phase 1 demo - the vulnerable-bucket snippet
