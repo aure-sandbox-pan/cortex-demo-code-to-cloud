@@ -39,11 +39,13 @@ jobs:
           chmod +x cortexcli
           ./cortexcli --version
 
-      - name: Cortex CLI top-level help (debug)
-        run: ./cortexcli --help
-
-      - name: Cortex CLI code --help (debug)
-        run: ./cortexcli code --help
+      - name: Determine branch name
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "SCAN_BRANCH=${{ github.head_ref }}" >> "$GITHUB_ENV"
+          else
+            echo "SCAN_BRANCH=${{ github.ref_name }}" >> "$GITHUB_ENV"
+          fi
 
       - name: Run Cortex CLI Code Scan
         run: |
@@ -54,7 +56,7 @@ jobs:
             code scan \
             --directory "${{github.workspace}}" \
             --repo-id "${{github.repository}}" \
-            --branch "${{github.ref_name}}" \
+            --branch "${SCAN_BRANCH}" \
             --source "GITHUB_ACTIONS" \
             --create-repo-if-missing
 
