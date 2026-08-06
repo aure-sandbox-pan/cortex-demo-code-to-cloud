@@ -80,12 +80,58 @@ resource "aws_eks_cluster" "this" {
   depends_on = [aws_iam_role_policy_attachment.eks_cluster_policy]
 }
 
+# EKS managed node groups cap the IMDS hop limit at 1 by default, which
+# blocks metadata access from inside pods (Docker's network namespace adds a
+# hop). Cortex Cloud's admission-controller pod has no IRSA role bound to its
+# service account, so it falls back to the node's instance-profile
+# credentials via IMDS for its own AWS calls (e.g. resolving ECR image
+# digests during admission review) - with hop limit 1 those calls never get
+# credentials in time and the webhook trips its 10s timeout. Hop limit 2
+# is the standard fix: one extra hop for the container network namespace,
+# IMDSv2 (http_tokens = "required") stays enforced.
+resource "aws_launch_template" "eks_nodes" {
+  name_prefix = "cortex-demo-eks-nodes-"
+
+  metadata_options {
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
+  }
+
+  # EKS's own managed launch config encrypts the root volume by default: a
+  # custom launch template drops that implicit behavior and falls back to
+  # EC2's default (unencrypted), which this account's
+  # DenyEc2MountUnencryptedVolume SCP explicitly blocks at RunInstances time.
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      encrypted   = true
+      volume_type = "gp3"
+    }
+  }
+
+  tag_specifications {
+    resource_type = "instance"
+    tags = {
+      Name = "cortex-demo-eks-node"
+    }
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 resource "aws_eks_node_group" "default" {
   cluster_name    = aws_eks_cluster.this.name
   node_group_name = "cortex-demo-nodes"
   node_role_arn   = aws_iam_role.eks_nodes.arn
   subnet_ids      = data.aws_subnets.default.ids
   instance_types  = ["t3.medium"]
+
+  launch_template {
+    id      = aws_launch_template.eks_nodes.id
+    version = aws_launch_template.eks_nodes.latest_version
+  }
 
   scaling_config {
     desired_size = 2
