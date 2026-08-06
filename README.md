@@ -254,18 +254,113 @@ introduced it.
        container, root user, hostNetwork, etc.) are set to block, not just
        alert.
 
-6. **VS Code with the Cortex Cloud extension** installed and signed in.
+6. **VS Code with the Cortex Cloud extension** installed and configured:
+   - **Node.js 22+** installed locally - required by the Cortex CLI the
+     extension manages for vulnerability scanning.
+   - Install the **Cortex Cloud** extension from the VS Code marketplace.
+   - In Cortex Cloud: **Settings > Data Sources & Integrations >
+     Integrations > API Keys > New Key**. Security Level `Standard`, Roles
+     `AppSec Admin`, `CLI`, `Developer`, `DevSecOps`, `Security Admin`,
+     Comment `cortex-demo-code-to-cloud`. This is a separate key from the
+     CI/CD one in prerequisite 7 below, scoped to the IDE extension. Note
+     the **Key ID** and the **API Base URL** shown alongside it.
+   - In the extension: run **Cortex Cloud: Update Cortex Cloud Secret Key**
+     to store the Key ID + Secret, and set `cortexCloud.platformURL` to the
+     API Base URL from the previous step.
 
-7. **GitHub repo secrets** configured: `CORTEX_API_URL`,
-   `CORTEX_ACCESS_KEY_ID`, `CORTEX_SECRET_KEY`.
+7. **Wire up the Cortex Cloud CI/CD GitHub Action** - this is what actually
+   sends SCA/IaC/secrets scan results tied to each commit to Cortex Cloud,
+   and what the "Code to Cloud" graph correlates against.
+   - In Cortex Cloud: **Settings > Integrations > Pipelines > GitHub
+     Actions**.
+   - Click **Generate API Key**. Copy the **API key** value and note the
+     **API key ID** shown next to it.
+   - Add both as GitHub repo secrets (repo **Settings > Secrets and
+     variables > Actions > New repository secret**): name the first
+     `CORTEX_API_KEY` (the key value) and the second `CORTEX_API_KEY_ID`
+     (the ID). Note: this is what the wizard actually asks for - not
+     `CORTEX_API_URL` / `CORTEX_ACCESS_KEY_ID` / `CORTEX_SECRET_KEY` as
+     older notes for this repo said.
+   - Click **Next** to reach "Configure Job" - it shows a YAML snippet.
+     `.github/workflows/ci.yml` in this repo already has it wired in, with
+     two adjustments made on top of the tenant's raw snippet (confirmed
+     necessary - re-check if your tenant's snippet differs):
+     - Triggers on both `pull_request` (PR-time guardrails, Phase 2) *and*
+       `push` to `main` + `workflow_dispatch` (keeps Code to Cloud's
+       traceability data current with what's actually deployed) - the raw
+       snippet only covered the `push` case.
+     - Drops the `--repo-url` flag from the `cortexcli code scan`
+       invocation - it isn't a real flag on the current CLI (`flag
+       provided but not defined: -repo-url`, confirmed via `./cortexcli
+       code scan --help`), even though the console-generated snippet
+       includes it.
 
-8. **Replace the placeholder step** in `.github/workflows/ci.yml` (currently
-   `exit 1`) with the exact CI/CD integration snippet from your tenant:
-   Cortex Cloud console > Settings > Integrations > Pipelines > GitHub
-   Actions. Test it on a throwaway PR before recording - a forgotten
-   placeholder will fail the pipeline even on clean code in Phase 4.
+8. **Create an AppSec Policy - a CI Code Scan finding a real vulnerability
+   does nothing by default.** A `cortexcli code scan` run uploads raw
+   *Findings* (e.g. `app/requirements.txt`'s intentionally vulnerable
+   `requests==2.25.1` / CVE-2023-32681, Medium/6.1) regardless, but nothing
+   turns a Finding into a tracked, PR-blocking *Issue* until a matching
+   policy exists - out of the box `ci.yml` will pass cleanly even on
+   vulnerable code (same class of gotcha as the Kubernetes admission
+   policies in prerequisite 5 needing to be set to Block, not just Alert).
 
-9. **Let one full `cd.yml` run complete once** before recording (EKS cluster
+   In Cortex Cloud: **Application Security (left rail) > Modules > Policy
+   Management > AppSec Policies > + New Policy**, then walk the wizard:
+
+   - **General**: Policy Type = `Code & Image scanners`. Give it a name
+     scoped to this repo so it's identifiable in a shared tenant with
+     many other policies, e.g. `cortex-demo-code-to-cloud: Block Fixable
+     SCA Vulnerabilities (Medium+)`. For the Description, write it as a
+     real enterprise policy rationale (business value), not a reference to
+     this demo's script - e.g.:
+     > Enforces automated vulnerability guardrails at the pull-request
+     > stage: any code change introducing a known, fixable open-source
+     > dependency vulnerability rated Medium severity or higher is
+     > blocked from merging into the main branch, and a remediation Issue
+     > is automatically opened and tracked through to resolution.
+   - **Conditions**: Finding Type = `Vulnerability` only. Click **Add
+     filter > CVSS Severity**, check `Medium`, `High`, `Critical` (Medium
+     must be included, or this demo's CVE at 6.1/Medium won't match).
+   - **Scope**: choose `Asset types` (not `Asset groups` - that list is
+     shared tenant-wide and already has 100+ entries from other teams;
+     creating a new one just to scope a single repo adds clutter). Click
+     **Add field**, choose `Repository Name`, operator `Contains`, value
+     `cortex-demo-code-to-cloud`. Confirm the results count narrows to
+     exactly 1 (your repo) before moving on.
+   - **Triggers & Actions** - enable **both** of these (not just one -
+     `ci.yml` triggers on the `pull_request` GitHub event, and Cortex Cloud
+     appears to classify/gate on that separately from the CI tool that
+     actually ran the scan, so `CI Code Scan` alone was not sufficient in
+     testing):
+     - **Code > PR Scan**: check `Block PR`, `PR Comment`, `Create a new
+       issue`.
+     - **Build > CI Code Scan**: check `Block CI`, `Report CI`, `Create a
+       new issue`.
+     - Optionally also enable **Deploy > Registry Image Scan > Create a
+       new issue** (severity `Medium`) to extend the same guardrail to
+       images already pushed to ECR, completing the code → build →
+       registry → runtime chain that "Code to Cloud" traces.
+   - **Summary**: review, click **Done**.
+
+   **Known caveat, verify before relying on it live:** the wizard warns
+   *"Third-party scanners can create issues only. They cannot perform
+   blocking actions."* Findings from this pipeline show up with `Data
+   Source = GitLab` (the vulnerability advisory database the scan uses,
+   not your CI platform) - it's not confirmed whether that classifies this
+   pipeline as a "third-party scanner" for this purpose, i.e. whether the
+   `Block` actions actually take effect or only `Create a new issue` does.
+   Test on a real PR and check both the PR's checks and Application
+   Security > Issues before recording.
+
+9. **Test it on a throwaway PR before recording.** Confirm the `cortex-scan`
+   job in `ci.yml` goes fully green (checkout → download `cortexcli` → scan
+   → SBOM) - a forgotten/broken step here fails the pipeline even on clean
+   code in Phase 4. Then confirm the policy from prerequisite 8 actually
+   fires on a PR that touches `app/requirements.txt`'s vulnerable
+   `requests==2.25.1`: check for a new Issue under Application Security >
+   Issues, and check the PR's checks for a block.
+
+10. **Let one full `cd.yml` run complete once** before recording (EKS cluster
    creation alone takes ~15-20 min) so `k8s/deployment.yaml`'s image
    resolves and the live rebuild in Phase 4 is fast.
 
