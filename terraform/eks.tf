@@ -89,6 +89,10 @@ resource "aws_eks_cluster" "this" {
 # credentials in time and the webhook trips its 10s timeout. Hop limit 2
 # is the standard fix: one extra hop for the container network namespace,
 # IMDSv2 (http_tokens = "required") stays enforced.
+#
+# checkov:skip=CKV_AWS_341: hop limit 2 is required (not just convenient)
+# for this cluster - see justification above. IMDSv2 token requirement
+# still bounds the exposure to a single extra network hop.
 resource "aws_launch_template" "eks_nodes" {
   name_prefix = "cortex-demo-eks-nodes-"
 
