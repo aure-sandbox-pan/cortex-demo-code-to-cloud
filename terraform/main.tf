@@ -9,6 +9,7 @@ resource "random_id" "suffix" {
 resource "aws_s3_bucket" "app_assets" {
   bucket = "cortex-demo-app-assets-${random_id.suffix.hex}"
   tags = {
+    Name                 = "cortex-demo-app-assets"
     git_commit           = "4da624fc221b76d601b504aab23984f470a74c6a"
     git_file             = "terraform/main.tf"
     git_last_modified_at = "2026-08-02 13:19:12"
