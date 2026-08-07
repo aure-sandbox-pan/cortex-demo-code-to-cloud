@@ -8,6 +8,17 @@ resource "random_id" "suffix" {
 # resource live in VS Code to trigger the Cortex IDE extension.
 resource "aws_s3_bucket" "app_assets" {
   bucket = "cortex-demo-app-assets-${random_id.suffix.hex}"
+  tags = {
+    git_commit           = "4da624fc221b76d601b504aab23984f470a74c6a"
+    git_file             = "terraform/main.tf"
+    git_last_modified_at = "2026-08-02 13:19:12"
+    git_last_modified_by = "agrivet@paloaltonetworks.com"
+    git_modifiers        = "agrivet"
+    git_org              = "aure-sandbox-pan"
+    git_repo             = "cortex-demo-code-to-cloud"
+    yor_name             = "app_assets"
+    yor_trace            = "05f67201-1d00-4884-aeb0-3b88b295117f"
+  }
 }
 
 # No aws_s3_bucket_public_access_block resource here: this account's SCP

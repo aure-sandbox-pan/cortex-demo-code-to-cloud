@@ -28,6 +28,17 @@ resource "aws_iam_role" "eks_cluster" {
       Action    = "sts:AssumeRole"
     }]
   })
+  tags = {
+    git_commit           = "c1508b81ef79681da9983b4e75c89922e819d57a"
+    git_file             = "terraform/eks.tf"
+    git_last_modified_at = "2026-08-02 16:21:32"
+    git_last_modified_by = "agrivet@paloaltonetworks.com"
+    git_modifiers        = "agrivet"
+    git_org              = "aure-sandbox-pan"
+    git_repo             = "cortex-demo-code-to-cloud"
+    yor_name             = "eks_cluster"
+    yor_trace            = "0afa247c-acbd-4a37-82d3-ae19c28b7ef8"
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
@@ -45,6 +56,17 @@ resource "aws_iam_role" "eks_nodes" {
       Action    = "sts:AssumeRole"
     }]
   })
+  tags = {
+    git_commit           = "c1508b81ef79681da9983b4e75c89922e819d57a"
+    git_file             = "terraform/eks.tf"
+    git_last_modified_at = "2026-08-02 16:21:32"
+    git_last_modified_by = "agrivet@paloaltonetworks.com"
+    git_modifiers        = "agrivet"
+    git_org              = "aure-sandbox-pan"
+    git_repo             = "cortex-demo-code-to-cloud"
+    yor_name             = "eks_nodes"
+    yor_trace            = "8e37d07c-63a8-4ba2-8187-c76bc3f3395a"
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "eks_nodes_worker" {
@@ -78,6 +100,17 @@ resource "aws_eks_cluster" "this" {
   }
 
   depends_on = [aws_iam_role_policy_attachment.eks_cluster_policy]
+  tags = {
+    git_commit           = "c1508b81ef79681da9983b4e75c89922e819d57a"
+    git_file             = "terraform/eks.tf"
+    git_last_modified_at = "2026-08-02 16:21:32"
+    git_last_modified_by = "agrivet@paloaltonetworks.com"
+    git_modifiers        = "agrivet"
+    git_org              = "aure-sandbox-pan"
+    git_repo             = "cortex-demo-code-to-cloud"
+    yor_name             = "this"
+    yor_trace            = "d1446f7d-0d3d-4f15-a6d9-ae55951c0ca3"
+  }
 }
 
 # EKS managed node groups cap the IMDS hop limit at 1 by default, which
@@ -123,6 +156,17 @@ resource "aws_launch_template" "eks_nodes" {
   lifecycle {
     create_before_destroy = true
   }
+  tags = {
+    git_commit           = "9edbd0d779e23fc9fc4a0d0145c737f4be3167f1"
+    git_file             = "terraform/eks.tf"
+    git_last_modified_at = "2026-08-06 07:58:09"
+    git_last_modified_by = "agrivet@paloaltonetworks.com"
+    git_modifiers        = "agrivet"
+    git_org              = "aure-sandbox-pan"
+    git_repo             = "cortex-demo-code-to-cloud"
+    yor_name             = "eks_nodes"
+    yor_trace            = "5720daec-3ee1-446d-a853-9528637d2a61"
+  }
 }
 
 resource "aws_eks_node_group" "default" {
@@ -148,6 +192,17 @@ resource "aws_eks_node_group" "default" {
     aws_iam_role_policy_attachment.eks_nodes_cni,
     aws_iam_role_policy_attachment.eks_nodes_ecr,
   ]
+  tags = {
+    git_commit           = "9edbd0d779e23fc9fc4a0d0145c737f4be3167f1"
+    git_file             = "terraform/eks.tf"
+    git_last_modified_at = "2026-08-06 07:58:09"
+    git_last_modified_by = "agrivet@paloaltonetworks.com"
+    git_modifiers        = "agrivet"
+    git_org              = "aure-sandbox-pan"
+    git_repo             = "cortex-demo-code-to-cloud"
+    yor_name             = "default"
+    yor_trace            = "7e423c6e-d358-48a0-a397-66695b23eafa"
+  }
 }
 
 # Lets the GitHub Actions CD role (assumed via OIDC, see terraform-bootstrap/
@@ -155,6 +210,17 @@ resource "aws_eks_node_group" "default" {
 resource "aws_eks_access_entry" "github_actions" {
   cluster_name  = aws_eks_cluster.this.name
   principal_arn = data.aws_iam_role.github_actions_cd.arn
+  tags = {
+    git_commit           = "c1508b81ef79681da9983b4e75c89922e819d57a"
+    git_file             = "terraform/eks.tf"
+    git_last_modified_at = "2026-08-02 16:21:32"
+    git_last_modified_by = "agrivet@paloaltonetworks.com"
+    git_modifiers        = "agrivet"
+    git_org              = "aure-sandbox-pan"
+    git_repo             = "cortex-demo-code-to-cloud"
+    yor_name             = "github_actions"
+    yor_trace            = "78ecaed3-552a-4b14-b377-27760e557197"
+  }
 }
 
 resource "aws_eks_access_policy_association" "github_actions_admin" {
@@ -184,6 +250,17 @@ resource "aws_eks_access_entry" "cortex_platform" {
   for_each      = data.aws_iam_roles.cortex_platform.arns
   cluster_name  = aws_eks_cluster.this.name
   principal_arn = each.value
+  tags = {
+    git_commit           = "f84ab9615052225c38fe674e4be24fee6c6f57cc"
+    git_file             = "terraform/eks.tf"
+    git_last_modified_at = "2026-08-04 12:25:24"
+    git_last_modified_by = "agrivet@paloaltonetworks.com"
+    git_modifiers        = "agrivet"
+    git_org              = "aure-sandbox-pan"
+    git_repo             = "cortex-demo-code-to-cloud"
+    yor_name             = "cortex_platform"
+    yor_trace            = "61fc513e-73fe-43af-b85f-b78bd72a8ba8"
+  }
 }
 
 resource "aws_eks_access_policy_association" "cortex_platform_view" {
