@@ -104,7 +104,7 @@ jobs:
             --api-key "${CORTEX_API_KEY}" \
             --api-key-id "${CORTEX_API_KEY_ID}" \
             image scan \
-            --name "$REGISTRY:$TAG" \
+            "$REGISTRY:$TAG" \
             --ci-pipeline-id "${{ github.workflow }}" \
             --ci-build-id "${{ github.run_id }}"
 
