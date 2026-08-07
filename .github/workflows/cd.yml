@@ -55,6 +55,10 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       image_uri: ${{ steps.image.outputs.uri }}
+    env:
+      CORTEX_API_KEY: ${{secrets.CORTEX_API_KEY}}
+      CORTEX_API_KEY_ID: ${{secrets.CORTEX_API_KEY_ID}}
+      CORTEX_API_URL: https://api-justruntime.xdr.us.paloaltonetworks.com
     steps:
       - uses: actions/checkout@v4
 
@@ -75,6 +79,39 @@ jobs:
           docker build -t "$REGISTRY:$TAG" .
           docker push "$REGISTRY:$TAG"
           echo "uri=$REGISTRY:$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Download cortexcli
+        run: |
+          crtx_resp=$(curl "${CORTEX_API_URL}/public_api/v1/unified-cli/releases/download-link?os=linux&architecture=amd64" \
+            -H "x-xdr-auth-id: ${CORTEX_API_KEY_ID}" \
+            -H "Authorization: ${CORTEX_API_KEY}")
+          crtx_url=$(echo $crtx_resp | jq -r ".signed_url")
+          curl -o cortexcli $crtx_url
+          chmod +x cortexcli
+          ./cortexcli --version
+
+      # Ties this exact image (by registry URI, tagged with the commit SHA)
+      # to the GitHub Actions run that built it, so Code-to-Cloud can
+      # resolve Pipeline -> Image without relying only on async registry
+      # scanning (which sees the image but not which run produced it).
+      # continue-on-error: the platform's own verdict-analysis step has
+      # been intermittently 500ing after a successful scan+upload (not a
+      # problem with this invocation) - don't let a Cortex-side error
+      # block the actual deployment.
+      - name: Cortex CLI Image Scan
+        continue-on-error: true
+        env:
+          REGISTRY: ${{ needs.terraform-apply.outputs.ecr_repository_url }}
+          TAG: ${{ github.sha }}
+        run: |
+          ./cortexcli \
+            --api-base-url "${CORTEX_API_URL}" \
+            --api-key "${CORTEX_API_KEY}" \
+            --api-key-id "${CORTEX_API_KEY_ID}" \
+            image scan \
+            "$REGISTRY:$TAG" \
+            --ci-pipeline-id "${{ github.workflow }}" \
+            --ci-build-id "${{ github.run_id }}"
 
   deploy:
     needs: build-and-push

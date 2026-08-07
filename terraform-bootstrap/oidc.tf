@@ -121,6 +121,25 @@ data "aws_iam_policy_document" "github_actions_permissions" {
     ]
   }
 
+  # terraform/eks.tf's node group launch template (IMDS hop limit + encrypted
+  # volume) - covers create/update/delete/tag. Launch template IDs are
+  # generated at create time (name_prefix-based), so scoped by resource type
+  # rather than a literal ARN.
+  statement {
+    sid    = "EksNodeLaunchTemplate"
+    effect = "Allow"
+    actions = [
+      "ec2:CreateLaunchTemplate",
+      "ec2:CreateLaunchTemplateVersion",
+      "ec2:ModifyLaunchTemplate",
+      "ec2:DeleteLaunchTemplate",
+      "ec2:DeleteLaunchTemplateVersions",
+      "ec2:CreateTags",
+      "ec2:DeleteTags",
+    ]
+    resources = ["arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:launch-template/*"]
+  }
+
   # Default VPC/subnet lookups for the EKS network config. Read-only
   # wildcard (not narrowed to specific Describe calls) since Terraform's AWS
   # provider makes several undocumented-in-advance Describe* calls when
