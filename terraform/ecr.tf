@@ -6,6 +6,7 @@ resource "aws_ecr_repository" "app" {
     scan_on_push = true
   }
   tags = {
+    Name                 = "cortex-demo-ecr"
     git_commit           = "c1508b81ef79681da9983b4e75c89922e819d57a"
     git_file             = "terraform/ecr.tf"
     git_last_modified_at = "2026-08-02 16:21:32"

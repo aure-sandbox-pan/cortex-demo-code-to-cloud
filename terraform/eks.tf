@@ -29,6 +29,7 @@ resource "aws_iam_role" "eks_cluster" {
     }]
   })
   tags = {
+    Name                 = "cortex-demo-eks-cluster-role"
     git_commit           = "c1508b81ef79681da9983b4e75c89922e819d57a"
     git_file             = "terraform/eks.tf"
     git_last_modified_at = "2026-08-02 16:21:32"
@@ -64,6 +65,7 @@ resource "aws_iam_role" "eks_nodes" {
     git_modifiers        = "agrivet"
     git_org              = "aure-sandbox-pan"
     git_repo             = "cortex-demo-code-to-cloud"
+    Name                 = "cortex-demo-eks-nodes-role"
     yor_name             = "eks_nodes"
     yor_trace            = "8e37d07c-63a8-4ba2-8187-c76bc3f3395a"
   }
@@ -84,7 +86,7 @@ resource "aws_iam_role_policy_attachment" "eks_nodes_ecr" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-resource "aws_eks_cluster" "this" {
+resource "aws_eks_cluster" "cluster" {
   name     = var.eks_cluster_name
   role_arn = aws_iam_role.eks_cluster.arn
   version  = "1.31"
@@ -108,7 +110,8 @@ resource "aws_eks_cluster" "this" {
     git_modifiers        = "agrivet"
     git_org              = "aure-sandbox-pan"
     git_repo             = "cortex-demo-code-to-cloud"
-    yor_name             = "this"
+    Name                 = "cortex-demo-eks"
+    yor_name             = "cluster"
     yor_trace            = "d1446f7d-0d3d-4f15-a6d9-ae55951c0ca3"
   }
 }
@@ -164,13 +167,14 @@ resource "aws_launch_template" "eks_nodes" {
     git_modifiers        = "agrivet"
     git_org              = "aure-sandbox-pan"
     git_repo             = "cortex-demo-code-to-cloud"
+    Name                 = "cortex-demo-eks-nodes-lt"
     yor_name             = "eks_nodes"
     yor_trace            = "5720daec-3ee1-446d-a853-9528637d2a61"
   }
 }
 
-resource "aws_eks_node_group" "default" {
-  cluster_name    = aws_eks_cluster.this.name
+resource "aws_eks_node_group" "nodes" {
+  cluster_name    = aws_eks_cluster.cluster.name
   node_group_name = "cortex-demo-nodes"
   node_role_arn   = aws_iam_role.eks_nodes.arn
   subnet_ids      = data.aws_subnets.default.ids
@@ -200,7 +204,8 @@ resource "aws_eks_node_group" "default" {
     git_modifiers        = "agrivet"
     git_org              = "aure-sandbox-pan"
     git_repo             = "cortex-demo-code-to-cloud"
-    yor_name             = "default"
+    Name                 = "cortex-demo-eks-nodes"
+    yor_name             = "nodes"
     yor_trace            = "7e423c6e-d358-48a0-a397-66695b23eafa"
   }
 }
@@ -208,7 +213,7 @@ resource "aws_eks_node_group" "default" {
 # Lets the GitHub Actions CD role (assumed via OIDC, see terraform-bootstrap/
 # oidc.tf) run kubectl against this cluster in the deploy job.
 resource "aws_eks_access_entry" "github_actions" {
-  cluster_name  = aws_eks_cluster.this.name
+  cluster_name  = aws_eks_cluster.cluster.name
   principal_arn = data.aws_iam_role.github_actions_cd.arn
   tags = {
     git_commit           = "c1508b81ef79681da9983b4e75c89922e819d57a"
@@ -218,13 +223,14 @@ resource "aws_eks_access_entry" "github_actions" {
     git_modifiers        = "agrivet"
     git_org              = "aure-sandbox-pan"
     git_repo             = "cortex-demo-code-to-cloud"
+    Name                 = "cortex-demo-eks-access-github-actions"
     yor_name             = "github_actions"
     yor_trace            = "78ecaed3-552a-4b14-b377-27760e557197"
   }
 }
 
 resource "aws_eks_access_policy_association" "github_actions_admin" {
-  cluster_name  = aws_eks_cluster.this.name
+  cluster_name  = aws_eks_cluster.cluster.name
   principal_arn = data.aws_iam_role.github_actions_cd.arn
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
@@ -248,7 +254,7 @@ data "aws_iam_roles" "cortex_platform" {
 
 resource "aws_eks_access_entry" "cortex_platform" {
   for_each      = data.aws_iam_roles.cortex_platform.arns
-  cluster_name  = aws_eks_cluster.this.name
+  cluster_name  = aws_eks_cluster.cluster.name
   principal_arn = each.value
   tags = {
     git_commit           = "f84ab9615052225c38fe674e4be24fee6c6f57cc"
@@ -258,6 +264,7 @@ resource "aws_eks_access_entry" "cortex_platform" {
     git_modifiers        = "agrivet"
     git_org              = "aure-sandbox-pan"
     git_repo             = "cortex-demo-code-to-cloud"
+    Name                 = "cortex-demo-eks-access-cortex-platform"
     yor_name             = "cortex_platform"
     yor_trace            = "61fc513e-73fe-43af-b85f-b78bd72a8ba8"
   }
@@ -265,7 +272,7 @@ resource "aws_eks_access_entry" "cortex_platform" {
 
 resource "aws_eks_access_policy_association" "cortex_platform_view" {
   for_each      = data.aws_iam_roles.cortex_platform.arns
-  cluster_name  = aws_eks_cluster.this.name
+  cluster_name  = aws_eks_cluster.cluster.name
   principal_arn = each.value
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy"
 
@@ -275,5 +282,5 @@ resource "aws_eks_access_policy_association" "cortex_platform_view" {
 }
 
 output "eks_cluster_name" {
-  value = aws_eks_cluster.this.name
+  value = aws_eks_cluster.cluster.name
 }
