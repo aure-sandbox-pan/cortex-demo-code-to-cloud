@@ -304,6 +304,31 @@ introduced it.
    vulnerable code (same class of gotcha as the Kubernetes admission
    policies in prerequisite 5 needing to be set to Block, not just Alert).
 
+   **Prerequisite for this step: install the Cortex GitHub App.** Without
+   it, the platform has no webhook into GitHub and the `PR Scan` trigger
+   below can never fire - `ci.yml`'s CLI-based scan still uploads Findings,
+   but nothing promotes them to blocking Issues or posts PR comments/status
+   checks, no matter how the policy itself is configured. In Cortex Cloud:
+   **Settings > Integrations > Code Repositories > Add Integration >
+   GitHub (SaaS)**, choose **Cortex GitHub App** (recommended), click
+   **Authorize**, pick the `aure-sandbox-pan` org, then on the GitHub
+   install screen choose **Only select repositories** scoped to just
+   `cortex-demo-code-to-cloud` (not All repositories) and **Install &
+   Authorize**. This grants the app: read access to Dependabot alerts,
+   Actions, administration, deployments, discussions, metadata, packages,
+   secret scanning alerts, secrets, and security events; read/write access
+   to checks, code, commit statuses, issues, pull requests, and repository
+   hooks; and read access to your account's email addresses.
+
+   Right after install, the instance will likely show **Status: Error**
+   with per-repo warnings (`Webhook subscription: Failed to get repository
+   hook`) and errors (`Cortex Gateway: Path was not approved in the
+   Egress`) - this is a pending network egress approval, not a broken
+   install. Fix: **Tenant Navigator > Cortex Gateway > Egress**, find the
+   pending request for this integration, and approve it. If you get an
+   "access unauthorized" error trying to approve it yourself, reach
+   **Brandon Goldstein** to approve the request for you.
+
    In Cortex Cloud: **Application Security (left rail) > Modules > Policy
    Management > AppSec Policies > + New Policy**, then walk the wizard:
 
@@ -363,6 +388,69 @@ introduced it.
 10. **Let one full `cd.yml` run complete once** before recording (EKS cluster
    creation alone takes ~15-20 min) so `k8s/deployment.yaml`'s image
    resolves and the live rebuild in Phase 4 is fast.
+
+11. **Code-to-Cloud full coverage (repository → pipeline → image → registry →
+    deployment → runtime)** - this is a separate, additional layer of setup
+    on top of prerequisites 1-10; the demo's core Phase 1-4 flow works
+    without it, but the "trace this alert back to the exact commit" bit of
+    Phase 3 needs it.
+
+    - **Yor trace tags**: Cortex resolves the IaC-to-live-resource link via
+      `yor_trace` tags, not just resource names. Applied once via
+      [bridgecrewio/yor](https://github.com/bridgecrewio/yor):
+      `yor tag --directory terraform/` (adds `tags = { yor_trace = ...,
+      git_commit = ..., ... }` to every taggable resource) - then a normal
+      `terraform apply` pushes those tags to the live AWS resources. Already
+      done for this repo (see `terraform/*.tf`); re-run `yor tag` after
+      adding new taggable resources.
+    - **Pipeline → Image linkage**: `docker push` alone doesn't tell Cortex
+      which CI run produced which image - async registry scanning sees the
+      image in ECR but can't resolve *which pipeline* pushed it.
+      `.github/workflows/cd.yml`'s `build-and-push` job runs
+      `cortexcli image scan <image-uri> --ci-pipeline-id ... --ci-build-id
+      ...` right after the push to make that link explicit. Note the image
+      ref is a **positional argument**, not `--name` (the CLI's own
+      `--help` text is misleading here - confirmed by testing).
+    - **GitHub App integration** (separate from the CI/CD API key in
+      prerequisite 7): **Settings > Integrations > Code Repositories > Add
+      Integration > GitHub (SaaS)**, install the **Cortex GitHub App**
+      scoped to just this repo. Without it, the `PR Scan` trigger type on
+      AppSec policies never fires (only `CI Code Scan` does). After
+      install, the instance likely shows **Status: Error** with a pending
+      **Cortex Gateway** egress approval - fix via **Tenant Navigator >
+      Cortex Gateway > Egress** (or ask **Brandon Goldstein** if you get
+      "access unauthorized" trying to approve it yourself). Also update the
+      repo's branch protection required status check name from the old
+      `Prisma Cloud / Code analysis` to the new `Cortex AppSec - Code
+      analysis` once the GitHub App takes over - the old context name is
+      never posted again and merges silently stay blocked forever
+      otherwise.
+    - **Business Application must be created manually.** The
+      auto-generated one (`<repo>_GitHub`, Creation Method `Auto`) comes
+      from a tenant-wide `Application Criteria` scoped to `GitHub, Group by
+      Repositories` only - it never includes cloud/runtime assets, so its
+      "Path to Production" graph is structurally empty no matter how
+      complete the rest of the setup is. Don't edit that shared criteria
+      (it's tenant-wide, not ours to touch). Instead: **Application
+      Security > Application Management > Business Applications > Create
+      Applications**, name it, then manually attach assets in the CODE
+      (GitHub repo) and RUN (K8s Cluster, not Account - more precise)
+      columns.
+
+    **Known open issue, as of Aug 2026**: attaching an asset in the manual
+    Application builder (either CODE or RUN, so not GitHub-specific)
+    reliably fails with a red "We are experiencing a problem" banner and a
+    `500` from `GET /api/cas/v1/application/builder/graph`. This is a
+    platform-side bug, not a config gap on our end - confirmed by testing
+    both asset types independently and by the fact that every other
+    prerequisite in this list checks out (data - Findings, package
+    inventory - is present and current; only the graph-builder endpoint
+    itself 500s). Reproduce and file an XSUP ticket with **Download Support
+    File** from the error banner if you hit this. Worth trying first: add
+    one asset at a time (CODE, Finish, then edit the created application to
+    add RUN) instead of both in a single builder session, in case the
+    backend is choking on a combined payload rather than per-asset-type -
+    unconfirmed either way as of this writing.
 
 ## Reusing this repo for your own demo session
 
