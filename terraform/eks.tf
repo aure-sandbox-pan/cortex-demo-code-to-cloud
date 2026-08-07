@@ -1,6 +1,20 @@
 # EKS cluster for the demo. Uses the account's default VPC/subnets to keep
 # the footprint small - this is a throwaway demo cluster, not prod.
 
+# State migration for the "this"/"default" -> "cluster"/"nodes" rename
+# (fixes yor_name showing up as literally "this" on live AWS resources) -
+# without these, terraform treats the rename as destroy-old/create-new,
+# which for aws_eks_cluster means destroying the whole cluster.
+moved {
+  from = aws_eks_cluster.this
+  to   = aws_eks_cluster.cluster
+}
+
+moved {
+  from = aws_eks_node_group.default
+  to   = aws_eks_node_group.nodes
+}
+
 data "aws_vpc" "default" {
   default = true
 }
